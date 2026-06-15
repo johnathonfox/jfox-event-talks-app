@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Track and share the latest BigQuery release notes and updates. Stay up to date with new features, performance improvements, and deprecations in Google Cloud BigQuery.">
+    <title>BigQuery Release Pulse</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Link to Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Background Accents -->
+    <div class="bg-gradient-glow top-left"></div>
+    <div class="bg-gradient-glow bottom-right"></div>
+
+    <div class="app-container">
+        <!-- Header Section -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="url(#logoGrad)" stroke="currentColor" stroke-width="0.5"/>
+                        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs>
+                            <linearGradient id="logoGrad" x1="2" y1="2" x2="22" y2="12" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#38bdf8"/>
+                                <stop offset="1" stop-color="#818cf8"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="title-container">
+                    <h1 id="app-title">BigQuery Release Pulse</h1>
+                    <p class="subtitle">Real-time updates, features, and fixes from Google Cloud BigQuery</p>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <button id="btn-refresh" class="btn btn-primary" title="Refresh Release Notes">
+                    <span class="btn-text">Refresh Feed</span>
+                    <svg id="spinner" class="spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" class="spinner-track"></circle>
+                        <path d="M12 2C6.47715 2 2 6.47715 2 12C2 13.8 2.5 15.5 3.4 17" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="spinner-head"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Bar -->
+        <section class="stats-bar" id="stats-container">
+            <div class="stat-item">
+                <span class="stat-label">Last Checked</span>
+                <span class="stat-value" id="stat-last-checked">Never</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Total Updates</span>
+                <span class="stat-value" id="stat-total-count">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Source</span>
+                <span class="stat-value"><a href="https://cloud.google.com/bigquery/docs/release-notes" target="_blank" rel="noopener">Google Cloud RSS</a></span>
+            </div>
+        </section>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <!-- Filter & Search Controls -->
+            <section class="control-panel">
+                <div class="search-box">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <input type="text" id="search-input" placeholder="Search releases by keyword, component, or category..." autocomplete="off">
+                </div>
+                
+                <div class="filters-container">
+                    <span class="filter-label">Filter Type:</span>
+                    <div class="filter-group" id="filter-group-types">
+                        <button class="filter-pill active" data-type="all">All</button>
+                        <button class="filter-pill" data-type="Feature">Feature</button>
+                        <button class="filter-pill" data-type="Changed">Changed</button>
+                        <button class="filter-pill" data-type="Deprecated">Deprecated</button>
+                        <button class="filter-pill" data-type="Other">Other</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Loading & Error States -->
+            <div id="loading-state" class="state-container hidden">
+                <div class="pulse-loader">
+                    <div class="circle"></div>
+                    <div class="circle"></div>
+                    <div class="circle"></div>
+                </div>
+                <p>Retrieving release feed from Google Cloud...</p>
+            </div>
+
+            <div id="error-state" class="state-container hidden">
+                <div class="error-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 9V14M12 17.01H12.01M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h3 id="error-title">Unable to Load Release Notes</h3>
+                <p id="error-message">We encountered a problem fetching the XML release notes feed. Please check your internet connection or try again.</p>
+                <button id="btn-retry" class="btn btn-secondary">Retry Fetch</button>
+            </div>
+
+            <div id="empty-state" class="state-container hidden">
+                <div class="empty-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h3>No Matching Updates Found</h3>
+                <p>Try adjusting your search criteria or type filter to find what you are looking for.</p>
+            </div>
+
+            <!-- Release Notes Feed -->
+            <section class="releases-feed" id="releases-grid">
+                <!-- Release cards will be inserted dynamically here -->
+            </section>
+        </main>
+        
+        <!-- Selection Dock (Floating Action Bar for Tweeting) -->
+        <div class="selection-dock" id="selection-dock">
+            <div class="dock-content">
+                <div class="dock-info">
+                    <span class="dock-count" id="dock-selected-count">0 Selected</span>
+                    <span class="dock-desc">update selected for sharing</span>
+                </div>
+                <div class="dock-actions">
+                    <button class="btn btn-secondary btn-sm" id="btn-clear-selection">Cancel</button>
+                    <button class="btn btn-twitter" id="btn-tweet-selected">
+                        <svg class="x-logo" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        <span>Tweet Selected</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Modal for Tweet Composition -->
+        <div class="modal-overlay" id="tweet-modal">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3>Review Tweet Content</h3>
+                    <button class="btn-close" id="btn-close-modal" aria-label="Close modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <label for="tweet-textarea" class="modal-label">Your Draft (max 280 chars):</label>
+                    <textarea id="tweet-textarea" rows="5" maxlength="280" placeholder="Draft your tweet here..."></textarea>
+                    
+                    <div class="tweet-metadata">
+                        <span id="char-counter">0 / 280</span>
+                        <span id="warning-limit" class="warning-text hidden">Draft exceeds recommended length!</span>
+                    </div>
+
+                    <div class="tweet-preview-source">
+                        <strong>Source Link:</strong>
+                        <span id="tweet-source-link-text">https://...</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="btn-cancel-modal">Cancel</button>
+                    <button class="btn btn-twitter" id="btn-publish-tweet">
+                        <svg class="x-logo" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        <span>Open X (Twitter)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <footer class="app-footer">
+            <p>BigQuery Release Pulse &bull; Created with Python Flask, HTML, CSS, &amp; JS &bull; &copy; 2026</p>
+        </footer>
+    </div>
+
+    <!-- Link to JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
